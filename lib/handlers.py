@@ -166,7 +166,7 @@ class InkRadio:
 
         self.mode_cn = {
             "coop-grouping": "打工模式",
-            "x": "X 挑战",
+            "x": "X挑战",
             "regular": "常规涂地",
             "bankara-challenge": "真格挑战",
             "bankara-open": "真格开放"
@@ -219,6 +219,8 @@ class InkRadio:
         results = info['results'][0]
 
         title = f"当前的 {mode_name} 场地在这里!"
+        if schedule == "next":
+            title = f"接下来的 {mode_name} 场地在这里!"
         card = Card(Module.Header(title), color=color)
 
         if 'rule' in results:
@@ -230,8 +232,8 @@ class InkRadio:
             card.append(
                 Module.Section(Struct.Paragraph(
                     2,
-                    Element.Text(f"(font){mode_name}(font)[{theme}]", type=Types.Text.KMD),
-                    Element.Text(f"(font){rule_name}(font)[{theme}]", type=Types.Text.KMD)
+                    Element.Text(f**"(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                    Element.Text(f**"(font){rule_name}(font)[{theme}]**", type=Types.Text.KMD)
                 ))
             )
 
@@ -239,8 +241,8 @@ class InkRadio:
             card.append(
                 Module.Section(Struct.Paragraph(
                     2,
-                    Element.Text(f"(font){mode_name}(font)[{theme}]", type=Types.Text.KMD),
-                    Element.Text(f"(font)BIG RUN!(font)[{theme}]", type=Types.Text.KMD)
+                    Element.Text(f**"(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                    Element.Text(f**"(font)BIG RUN!(font)[{theme}]**", type=Types.Text.KMD)
                 ))
             )
 
@@ -255,7 +257,7 @@ class InkRadio:
             image = await create_kook_image(self.bot, stage['image'])
             card.append(
                 Module.Section(
-                    Element.Text(f"(font){name}(font)[{theme}]", type=Types.Text.KMD)
+                    Element.Text(f"**(font){name}(font)[{theme}]**", type=Types.Text.KMD)
                 )
             )
             card.append(Module.Container(Element.Image(image)))
@@ -276,7 +278,7 @@ class InkRadio:
         for weapon in results.get('weapons', []):
             image = await create_kook_image(self.bot, weapon['image'])
             if image_group is None:
-                image_group = Module.ImageGroup(Element.Image(src=image, size=Types.Size.SM))
+                image_group = Module.ImageGroup(Element.Image(src=image))
             else:
                 image_group.append(Element.Image(src=image))
         if image_group is not None:
