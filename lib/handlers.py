@@ -87,9 +87,8 @@ class WikiCMD:
 
         card = Card(
             Module.Header(title),
-            Module.Context(context),
+            Module.Section(text=context),
             Module.Divider(),
-            # color="ff0000"
         )
         if images:
             img_urls = list()
@@ -117,7 +116,7 @@ class WikiCMD:
         except Exception as e:
             print(e)
             msg_text = f'Failed to fetch wikipedia page for "{query}"'
-            reply = CardMessage(Card(Module.Section(text=Element.Text(msg_text, type=Types.Text.PLAIN))))
+            reply = CardMessage(Card(Module.Section(text=msg_text)))
 
         await msg.reply(reply)
 
@@ -131,7 +130,7 @@ class InkRadio:
         self.brief = ''
         self.description = self.brief
 
-        self.color = {
+        self.card_color = {
             "coop-grouping": Color(249, 55, 40),
             "x": Color(34, 212, 135),
             "regular": Color(197, 248, 30),
@@ -139,7 +138,15 @@ class InkRadio:
             "bankara-open": Color(239, 50, 16),
         }
 
-        self.theme = {
+        self.card_theme = {
+            "coop-grouping": "warning",
+            "x": "success",
+            "regular": "success",
+            "bankara-challenge": "warning",
+            "bankara-open": "warning"
+        }
+
+        self.text_theme = {
             "coop-grouping": "warning",
             "x": "success",
             "regular": "success",
@@ -209,8 +216,7 @@ class InkRadio:
         assert mode and mode in self.mode_alias, "模式名错误！"
         print(mode)
         mode_name = self.mode_cn.get(mode, mode)
-        color = self.color[mode]
-        theme = self.theme[mode]
+        # color = self.card_color[mode]
 
         if schedule in ["n", "next"]:
             schedule = "next"
@@ -224,8 +230,9 @@ class InkRadio:
         title = f"当前的 {mode_name} 场地在这里!"
         if schedule == "next":
             title = f"接下来的 {mode_name} 场地在这里!"
-        card = Card(Module.Header(title), color=color)
+        card = Card(Module.Header(title), theme=self.card_theme[mode])
 
+        theme = self.text_theme[mode]
         if 'rule' in results:
             rule = results['rule']['key']
             rule_name = self.rule_cn.get(rule, rule)
