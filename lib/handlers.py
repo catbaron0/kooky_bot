@@ -102,7 +102,6 @@ class WikiCMD:
                 for img_url in img_urls[1:]:
                     image_group.append(Element.Image(src=img_url))
                 card.append(image_group)
-        print(title)
         if link:
             card.append(
                 Module.ActionGroup(Element.Button('More', link, Types.Click.LINK))
@@ -207,12 +206,16 @@ class InkRadio:
 
     async def generate_card(self, mode: str, schedule: str) -> CardMessage:
         mode = self.alias_to_mode(mode)
+        assert mode and mode in self.mode_alias, "模式名错误！"
+        print(mode)
         mode_name = self.mode_cn.get(mode, mode)
         color = self.color[mode]
         theme = self.theme[mode]
 
-        if schedule == "n":
+        if schedule in ["n", "next"]:
             schedule = "next"
+        else:
+            schedule = "now"
         info = self.get_stage_info(mode, schedule)
         if info is None or 'results' not in info:
             return None
@@ -226,14 +229,13 @@ class InkRadio:
         if 'rule' in results:
             rule = results['rule']['key']
             rule_name = self.rule_cn.get(rule, rule)
-
             if results.get('is_fest', False):
                 mode_name += "(FEST!)"
             card.append(
                 Module.Section(Struct.Paragraph(
                     2,
-                    Element.Text(f**"(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
-                    Element.Text(f**"(font){rule_name}(font)[{theme}]**", type=Types.Text.KMD)
+                    Element.Text(f"**(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                    Element.Text(f"**(font){rule_name}(font)[{theme}]**", type=Types.Text.KMD)
                 ))
             )
 
@@ -241,8 +243,8 @@ class InkRadio:
             card.append(
                 Module.Section(Struct.Paragraph(
                     2,
-                    Element.Text(f**"(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
-                    Element.Text(f**"(font)BIG RUN!(font)[{theme}]**", type=Types.Text.KMD)
+                    Element.Text(f"**(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                    Element.Text(f"**(font)BIG RUN!(font)[{theme}]**", type=Types.Text.KMD)
                 ))
             )
 
@@ -286,7 +288,14 @@ class InkRadio:
         return CardMessage(card)
 
     async def __call__(self, msg, mode: str = "", schedule: str = 'now'):
-        reply = await self.generate_card(mode, schedule)
+        # reply = await self.generate_card(mode, schedule)
+        try:
+            reply = await self.generate_card(mode, schedule)
+        except Exception as e:
+            await msg.reply(f"查询失败: {e}!")
+            return
+
         if reply is None:
-            msg.reply("查询失败！")
-        await msg.reply(reply)
+            await msg.reply("查询失败！")
+        else:
+            await msg.reply(reply)
