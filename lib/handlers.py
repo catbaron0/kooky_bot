@@ -117,7 +117,7 @@ class WikiCMD:
         except Exception as e:
             print(e)
             msg_text = f'Failed to fetch wikipedia page for "{query}"'
-            reply = CardMessage(Card(Module.Context(msg_text)))
+            reply = CardMessage(Card(Module.Section(text=Element.Text(msg_text, type=Types.Text.PLAIN))))
 
         await msg.reply(reply)
 
@@ -232,20 +232,16 @@ class InkRadio:
             if results.get('is_fest', False):
                 mode_name += "(FEST!)"
             card.append(
-                Module.Section(Struct.Paragraph(
-                    2,
-                    Element.Text(f"**(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                Module.Section(
                     Element.Text(f"**(font){rule_name}(font)[{theme}]**", type=Types.Text.KMD)
-                ))
+                )
             )
 
         if results.get("is_big_run", False):
             card.append(
-                Module.Section(Struct.Paragraph(
-                    2,
-                    Element.Text(f"**(font){mode_name}(font)[{theme}]**", type=Types.Text.KMD),
+                Module.Section(
                     Element.Text(f"**(font)BIG RUN!(font)[{theme}]**", type=Types.Text.KMD)
-                ))
+                )
             )
 
         if 'end_time' in results:
