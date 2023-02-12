@@ -12,7 +12,7 @@ async def create_kook_image(bot, path: str) -> str:
     '''
     # if path is url, download the image first
     if path.startswith("http"):
-        fn = Path(path).name.split("?")[0]
+        fn = Path(path.split("?")[0]).name
         if fn.endswith("svg"):
             return ""
         req = requests.get(path)

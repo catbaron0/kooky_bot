@@ -10,16 +10,31 @@ with open(sys.argv[1], 'r', encoding='utf-8') as f:
     config = json.load(f)
 # init Bot
 bot = Bot(token=config['token'])
+openai_key = config['openai_key']
 
 
 py_hdl = handlers.PinyinCMD()
-wiki_hdl = handlers.WikiCMD(bot=bot)
-spl_hdl = handlers.InkRadio(bot=bot)
+gpt_hdl = handlers.GptCMD(openai_key)
+wiki_hdl = handlers.WikiCMD(bot)
+spl_hdl = handlers.InkRadio(bot)
+gpt_img_hdl = handlers.GptImgCMD(bot, openai_key)
 
 
 @bot.command(name='hello')
 async def hello(msg: Message):
     await msg.reply("world")
+
+
+@bot.command(name=gpt_img_hdl.name)
+async def img(msg: Message, *args):
+    prompt = ' '.join(args)
+    await gpt_img_hdl(msg, prompt)
+
+
+@bot.command(name=gpt_hdl.name)
+async def gpt(msg: Message, *args):
+    prompt = ' '.join(args)
+    await gpt_hdl(msg, prompt)
 
 
 @bot.command(
@@ -58,6 +73,11 @@ async def spl(msg: Message, mode: str = "", schedule: str = "now"):
 @bot.command(name="td", aliases=["涂地", "tudi"])
 async def td(msg: Message, schedule: str = "now"):
     await spl_hdl(msg, "td", schedule)
+
+
+@bot.command(name="jd", aliases=["涂地", "tudi", "fest"])
+async def jd(msg: Message, schedule: str = "now"):
+    await spl_hdl(msg, "fest", schedule)
 
 
 @bot.command(name="zg", aliases=["真格", "zhenge"])

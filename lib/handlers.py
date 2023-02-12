@@ -1,14 +1,13 @@
 import logging
 from datetime import datetime
-
 from typing import Optional, Dict
 
-
 from khl import Message
-from khl.card import CardMessage, Card, Module, Element, Types, Struct, Color
+from khl.card import CardMessage, Card, Module, Element, Types, Color
 import requests
 import wikipedia as wiki
 from pypinyin import pinyin
+import openai
 
 from lib.utils import create_kook_image
 
@@ -21,6 +20,71 @@ fh.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message
 ch.setFormatter(logging.Formatter('%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 logger.addHandler(fh)
 logger.addHandler(ch)
+
+
+class GptImgCMD:
+    def __init__(self, bot, api_key: str):
+        self.bot = bot
+        self.name = 'img'
+        self.api_key = api_key
+
+    async def __call__(self, msg: Message, prompt: str):
+        if not prompt.strip():
+            return
+        # if not words.strip() and msg.quote and msg.quote.content:
+        #     words = msg.quote.content
+        try:
+            await msg.reply("Drawing...")
+            openai.api_key = self.api_key
+            data = openai.Image.create(
+                prompt=prompt,
+                size="512x512",
+                n=4
+                # user=msg.author_id
+            )["data"]
+            print(data)
+
+            card = Card()
+            for dt in data:
+                url = dt['url']
+                image = await create_kook_image(self.bot, url)
+                # if image_group is None:
+                #     image_group = Module.ImageGroup(Element.Image(src=image))
+                # else:
+                #     image_group.append(Element.Image(src=image))
+                try:
+                    image_group.append(Element.Image(src=image))
+                except NameError:
+                    image_group = Module.ImageGroup(Element.Image(src=image))
+            card.append(image_group)
+            reply = CardMessage(card)
+        except Exception as e:
+            reply = f"Error! \n```\n{e}\n```"
+        await msg.reply(reply)
+
+
+class GptCMD:
+    def __init__(self, api_key: str):
+        self.name = 'gpt'
+        self.api_key = api_key
+
+    async def __call__(self, msg: Message, prompt: str):
+        if not prompt.strip():
+            return
+        # if not words.strip() and msg.quote and msg.quote.content:
+        #     words = msg.quote.content
+        try:
+            openai.api_key = self.api_key
+            reply = openai.Completion.create(
+                engine="text-davinci-003",
+                prompt=prompt,
+                max_tokens=2048,
+                stream=False,
+                user=msg.author_id
+            )["choices"][0]["text"].strip()
+        except Exception as e:
+            reply = f"Error! \n```\n{e}\n```"
+        await msg.reply(reply)
 
 
 class PinyinCMD:
@@ -122,7 +186,7 @@ class WikiCMD:
 
 
 class InkRadio:
-    def __init__(self, bot, lang="zh"):
+    def __init__(self, bot):
         self.bot = bot
 
         self.name = 'spl'
@@ -134,6 +198,7 @@ class InkRadio:
             "coop-grouping": Color(249, 55, 40),
             "x": Color(34, 212, 135),
             "regular": Color(197, 248, 30),
+            "fest": Color(197, 248, 30),
             "bankara-challenge": Color(239, 50, 16),
             "bankara-open": Color(239, 50, 16),
         }
@@ -142,6 +207,7 @@ class InkRadio:
             "coop-grouping": "warning",
             "x": "success",
             "regular": "success",
+            "fest": "success",
             "bankara-challenge": "warning",
             "bankara-open": "warning"
         }
@@ -150,6 +216,7 @@ class InkRadio:
             "coop-grouping": "warning",
             "x": "success",
             "regular": "success",
+            "fest": "success",
             "bankara-challenge": "warning",
             "bankara-open": "warning"
         }
@@ -158,6 +225,7 @@ class InkRadio:
             "coop-grouping": ["coop-grouping", '打工', 'sr', 'dg', 'dagong'],
             "x": ["x"],
             "regular": ["regular", "涂地", 'td', 'tudi'],
+            "fest": ["fest", "jd"],
             "bankara-challenge": ["bankara-challenge", "challenge", "挑战", "tz", "真格挑战", "zgtz"],
             "bankara-open": ["bankara-challenge", "开放", "kf", "open", "真格开放", "zgkf"],
         }
@@ -174,6 +242,7 @@ class InkRadio:
             "coop-grouping": "打工模式",
             "x": "X挑战",
             "regular": "常规涂地",
+            "fest": "祭典",
             "bankara-challenge": "真格挑战",
             "bankara-open": "真格开放"
         }
@@ -234,10 +303,13 @@ class InkRadio:
 
         theme = self.text_theme[mode]
         if 'rule' in results:
-            rule = results['rule']['key']
-            rule_name = self.rule_cn.get(rule, rule)
+            try:
+                rule = results['rule']['key']
+                rule_name = self.rule_cn.get(rule, rule)
+            except Exception:
+                rule_name = "FEST???"
             if results.get('is_fest', False):
-                mode_name += "(FEST!)"
+                mode_name += "(FEST!!!)"
             card.append(
                 Module.Section(
                     Element.Text(f"**(font){rule_name}(font)[{theme}]**", type=Types.Text.KMD)
@@ -256,18 +328,20 @@ class InkRadio:
             card.append(Module.Countdown(end_time, mode=Types.CountdownMode.DAY))
 
         card.append(Module.Divider())
-        for stage in results.get('stages', []):
-            name = stage['name']
-            name = self.stage_cn.get(name, name)
-            image = await create_kook_image(self.bot, stage['image'])
-            card.append(
-                Module.Section(
-                    Element.Text(f"**(font){name}(font)[{theme}]**", type=Types.Text.KMD)
+        stages = results.get('stages', [])
+        if stages:
+            for stage in stages:
+                name = stage['name']
+                name = self.stage_cn.get(name, name)
+                image = await create_kook_image(self.bot, stage['image'])
+                card.append(
+                    Module.Section(
+                        Element.Text(f"**(font){name}(font)[{theme}]**", type=Types.Text.KMD)
+                    )
                 )
-            )
-            card.append(Module.Container(Element.Image(image)))
+                card.append(Module.Container(Element.Image(image)))
 
-        if 'stage' in results:
+        if 'stage' in results and results is not None:
             stage = results['stage']
             name = stage['name']
             name = self.stage_cn.get(name, name)
